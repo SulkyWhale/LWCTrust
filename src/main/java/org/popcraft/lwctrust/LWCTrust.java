@@ -1,7 +1,6 @@
 package org.popcraft.lwctrust;
 
 import com.griefcraft.lwc.LWC;
-import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -9,6 +8,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 import org.popcraft.lwctrust.locale.FileResourceLoader;
 import org.popcraft.lwctrust.locale.UTF8Control;
 
@@ -45,11 +45,11 @@ public final class LWCTrust extends JavaPlugin {
         this.defaultBundle = ResourceBundle.getBundle("locale", Locale.ENGLISH, new UTF8Control());
         if (messageFile.exists()) {
             // Load a custom provided locale file from the plugin folder
-            this.localeBundle = ResourceBundle.getBundle("locale", new Locale(locale),
+            this.localeBundle = ResourceBundle.getBundle("locale", Locale.of(locale),
                     new FileResourceLoader(this), new UTF8Control());
         } else if (localeResource != null) {
             // Load another valid locale that is included with the plugin
-            this.localeBundle = ResourceBundle.getBundle("locale", new Locale(locale),
+            this.localeBundle = ResourceBundle.getBundle("locale", Locale.of(locale),
                     new UTF8Control());
         } else {
             // Fall back to the default locale
@@ -65,7 +65,7 @@ public final class LWCTrust extends JavaPlugin {
         } catch (NoClassDefFoundError e) {
             this.getLogger().severe(getMessage("error.nolwc"));
             this.getLogger().severe(getMessage("url.lwc"));
-            this.setEnabled(false);
+            getServer().getPluginManager().disablePlugin(this);
         }
         // Enable bStats metrics
         int pluginId = 6614;
@@ -73,15 +73,13 @@ public final class LWCTrust extends JavaPlugin {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         // Only players can trust
-        if (args.length < 1 || !(sender instanceof Player)) {
+        if (args.length < 1 || !(sender instanceof Player player)) {
             sender.sendMessage(getMessage("trust.description"));
             return false;
         }
         boolean confirm = this.getConfig().getBoolean("confirm-action", true);
-        Player player = (Player) sender;
         UUID playerUniqueId = player.getUniqueId();
         if ("add".equalsIgnoreCase(args[0]) && player.hasPermission("lwctrust.trust.add")) {
             // Get a list of existing unique players to add from the arguments
@@ -133,7 +131,7 @@ public final class LWCTrust extends JavaPlugin {
             } else {
                 List<String> playerNames = trusted.stream()
                         .map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).collect(Collectors.toList());
-                player.sendMessage(getMessage("trust.list", StringUtils.join(playerNames, ", ")));
+                player.sendMessage(getMessage("trust.list", String.join(", ", playerNames)));
             }
         } else if ("confirm".equalsIgnoreCase(args[0])) {
             // Add any trusts from pending confirmations, if any
@@ -170,11 +168,10 @@ public final class LWCTrust extends JavaPlugin {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (!(sender instanceof Player)) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
+        if (!(sender instanceof Player player)) {
             return Collections.emptyList();
         }
-        Player player = (Player) sender;
         if (args.length == 1) {
             List<String> completions = new ArrayList<>();
             if (player.hasPermission("lwctrust.trust.add")) {
