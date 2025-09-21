@@ -21,3 +21,4 @@ permissions:
       lwctrust.trust.add: true
       lwctrust.trust.remove: true
       lwctrust.trust.list: true
+      lwctrust.trust.list.others: false

@@ -124,14 +124,22 @@ public final class LWCTrust extends JavaPlugin {
             });
             trustCache.save(playerUniqueId);
         } else if ("list".equalsIgnoreCase(args[0]) && player.hasPermission("lwctrust.trust.list")) {
+            UUID targetUniqueId = args.length > 1 && player.hasPermission("lwctrust.trust.list.others")
+                    ? Bukkit.getOfflinePlayer(args[1]).getUniqueId()
+                    : playerUniqueId;
+            boolean isSelf = playerUniqueId.equals(targetUniqueId);
             // Load a player's trusts and send them a list
-            List<UUID> trusted = trustCache.load(playerUniqueId);
+            List<UUID> trusted = trustCache.load(targetUniqueId);
             if (trusted.isEmpty()) {
-                player.sendMessage(getMessage("trust.list.empty"));
+                player.sendMessage(isSelf
+                        ? getMessage("trust.list.empty")
+                        : getMessage("trust.list.empty.other", Bukkit.getOfflinePlayer(targetUniqueId).getName()));
             } else {
                 List<String> playerNames = trusted.stream()
                         .map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).collect(Collectors.toList());
-                player.sendMessage(getMessage("trust.list", String.join(", ", playerNames)));
+                player.sendMessage(isSelf
+                        ? getMessage("trust.list", String.join(", ", playerNames))
+                        : getMessage("trust.list.other", Bukkit.getOfflinePlayer(targetUniqueId).getName(), String.join(", ", playerNames)));
             }
         } else if ("confirm".equalsIgnoreCase(args[0])) {
             // Add any trusts from pending confirmations, if any
@@ -187,7 +195,7 @@ public final class LWCTrust extends JavaPlugin {
                 completions.addAll(Arrays.asList("confirm", "cancel"));
             }
             return completions.stream().filter(s -> s.startsWith(args[0])).collect(Collectors.toList());
-        } else if (args.length > 1 && Arrays.asList("add", "remove").contains(args[0])) {
+        } else if (args.length > 1 && Arrays.asList("add", "remove", "list").contains(args[0])) {
             return null;
         } else {
             return Collections.emptyList();
