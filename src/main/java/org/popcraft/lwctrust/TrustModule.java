@@ -1,6 +1,7 @@
 package org.popcraft.lwctrust;
 
 import com.griefcraft.model.Permission;
+import com.griefcraft.model.Protection;
 import com.griefcraft.scripting.JavaModule;
 import com.griefcraft.scripting.event.LWCAccessEvent;
 
@@ -22,7 +23,11 @@ public class TrustModule extends JavaModule {
     public void onAccessRequest(LWCAccessEvent event) {
         UUID owner;
         try {
-            owner = UUID.fromString(event.getProtection().getOwner());
+            Protection protection = event.getProtection();
+            if (protection == null)
+                return;
+
+            owner = UUID.fromString(protection.getOwner());
         } catch (IllegalArgumentException e) {
             return;
         }
